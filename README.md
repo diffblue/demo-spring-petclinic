@@ -4,12 +4,8 @@
 
 ## Understanding the Spring Petclinic application with a few diagrams
 
-See the presentation here:  
-[Spring Petclinic Sample Application (legacy slides)](https://speakerdeck.com/michaelisvy/spring-petclinic-sample-application?slide=20)
-
-> **Note:** These slides refer to a legacy, pre–Spring Boot version of Petclinic and may not reflect the current Spring Boot–based implementation.  
-> For up-to-date information, please refer to this repository and its documentation.
-
+## Running petclinic locally
+Petclinic is a [Spring Boot](https://spring.io/guides/gs/spring-boot) application built using [Maven](https://spring.io/guides/gs/maven/). You can build a jar file and run it from the command line (it should work just as well with Java 17 or newer):
 
 ## Run Petclinic locally
 
@@ -37,8 +33,11 @@ You can then access the Petclinic at <http://localhost:8080/>.
 
 <img width="1042" alt="petclinic-screenshot" src="https://cloud.githubusercontent.com/assets/838318/19727082/2aee6d6c-9b8e-11e6-81fe-e889a5ddfded.png">
 
-You can, of course, run Petclinic in your favorite IDE.
-See below for more details.
+Or you can run it from Maven directly using the Spring Boot Maven plugin. If you do this, it will pick up changes that you make in the project immediately (changes to Java source files require a compile as well - most people use an IDE for this):
+
+```bash
+./mvnw spring-boot:run
+```
 
 ## Building a Container
 
