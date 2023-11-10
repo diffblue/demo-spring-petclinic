@@ -69,12 +69,13 @@ println("SkipTestOptimizer: ${skipTestOptimizer}")
 String dcoverPatch = "${projectDir}/.diffblue/changes.patch"
 
 task createPatchFile(type:Exec) {
-    commandLine 'git', 'diff'
+    commandLine 'git', 'diff', '--merge-base', 'HEAD'
     doFirst {
             mkdir "${projectDir}/.diffblue"
             delete dcoverPatch
             standardOutput new FileOutputStream(dcoverPatch)
     }
+    onlyIf { !skipTestOptimizer }
 }
 
 // Configure the optimizeTests task with required fields
@@ -83,7 +84,7 @@ optimizeTests {
     // REQUIRED: Calculate the runtime classpath used to execute tests
     classpath = sourceSets.test.runtimeClasspath;
     // The absolute path to your installed 'dcover' executable
-    command = 'dcover' // TO DO: CHECK AS ALREADY ON PATH
+    command = project.findProperty('com.diffblue.cover.command')
     // The absolute path to the patch file for which optimal tests will be calculated
     patch = dcoverPatch
 }
@@ -92,7 +93,7 @@ optimizeTests {
 // Configure the updateTestFilter task to set the fields of any Test tasks
 task updateTestFilter() {
     doLast {
-        if (!skipTestOptimizer && cover.allSelectedTests) {
+        if (cover.allSelectedTests) {
             tasks.withType(Test) {
                 // Set selected filters in the test task
                 filter.setIncludePatterns cover.allSelectedTests
@@ -101,11 +102,12 @@ task updateTestFilter() {
             }
         }
     }
+    onlyIf { !skipTestOptimizer }
 }
 
 // Specify dependencies to ensure the correct order of task execution
 // optimizeTests -> updateTestFilter -> test
-createPatchFile.onlyIf { skipTestOptimizer == false }
+createPatchFile.onlyIf { !skipTestOptimizer }
 optimizeTests.dependsOn createPatchFile
 updateTestFilter.dependsOn optimizeTests
 test.dependsOn updateTestFilter
