@@ -1,9 +1,26 @@
+buildscript {
+    repositories {
+        // Add the Diffblue Public Maven Repository
+        maven {
+            url "https://maven.diffblue.com/release"
+        }
+    }
+    dependencies {
+        // Add the Plugin's JAR
+        // specify the version that corresponds with your installed version of Cover CLI
+        classpath 'com.diffblue.cover:com.diffblue.cover.gradle.plugin:[2023.11.01]'
+    }
+}
+
 plugins {
   id 'java'
   id 'org.springframework.boot' version '3.1.1'
   id 'io.spring.dependency-management' version '1.1.0'
   id 'org.graalvm.buildtools.native' version '0.9.23'
 }
+
+// Activate the Cover Plugin
+apply plugin: 'com.diffblue.cover'
 
 apply plugin: 'java'
 
@@ -44,3 +61,38 @@ dependencies {
 tasks.named('test') {
   useJUnitPlatform()
 }
+
+// Define a Gradle property to control the execution of the optimizeTests task
+// This will be useful for running the tasks without optimization (e.g. -PskipTestOptimizer=true)
+def skipTestOptimizer = project.hasProperty('skipTestOptimizer') ? project.getProperty('skipTestOptimizer').toBoolean() : false
+
+// Configure the optimizeTests task with required fields
+optimizeTests {
+    skip = skipTestOptimizer
+    // REQUIRED: Calculate the runtime classpath used to execute tests
+    classpath = sourceSets.test.runtimeClasspath;
+    // The absolute path to your installed 'dcover' executable
+    // command = project.findProperty('com.diffblue.cover.command') // TO DO: CHECK AS ALREADY ON PATH
+    // The absolute path to the patch file for which optimal tests will be calculated
+    patch = project.findProperty('com.diffblue.cover.patch')
+}
+
+
+// Configure the updateTestFilter task to set the fields of any Test tasks
+task updateTestFilter() {
+    doLast {
+        if (!skipTestOptimizer && cover.allSelectedTests) {
+            tasks.withType(Test) {
+                // Set selected filters in the test task
+                filter.setIncludePatterns cover.allSelectedTests
+                // Specify that test tasks will not fail if the optimizer finds no tests to execute
+                filter.setFailOnNoMatchingTests false
+            }
+        }
+    }
+}
+
+// Specify dependencies to ensure the correct order of task execution
+// optimizeTests -> updateTestFilter -> test
+updateTestFilter.dependsOn optimizeTests
+test.dependsOn updateTestFilter
