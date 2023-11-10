@@ -65,6 +65,17 @@ tasks.named('test') {
 // Define a Gradle property to control the execution of the optimizeTests task
 // This will be useful for running the tasks without optimization (e.g. -PskipTestOptimizer=true)
 def skipTestOptimizer = project.hasProperty('skipTestOptimizer') ? project.getProperty('skipTestOptimizer').toBoolean() : false
+println("SkipTestOptimizer: ${skipTestOptimizer}")
+String dcoverPatch = "${projectDir}/.diffblue/changes.patch"
+
+task createPatchFile(type:Exec) {
+    commandLine 'git', 'diff'
+    doFirst {
+            mkdir "${projectDir}/.diffblue"
+            delete dcoverPatch
+            standardOutput new FileOutputStream(dcoverPatch)
+    }
+}
 
 // Configure the optimizeTests task with required fields
 optimizeTests {
@@ -72,9 +83,9 @@ optimizeTests {
     // REQUIRED: Calculate the runtime classpath used to execute tests
     classpath = sourceSets.test.runtimeClasspath;
     // The absolute path to your installed 'dcover' executable
-    command = project.findProperty('com.diffblue.cover.command') // TO DO: CHECK AS ALREADY ON PATH
+    command = 'dcover' // TO DO: CHECK AS ALREADY ON PATH
     // The absolute path to the patch file for which optimal tests will be calculated
-    patch = project.findProperty('com.diffblue.cover.patch')
+    patch = dcoverPatch
 }
 
 
@@ -94,5 +105,7 @@ task updateTestFilter() {
 
 // Specify dependencies to ensure the correct order of task execution
 // optimizeTests -> updateTestFilter -> test
+createPatchFile.onlyIf { skipTestOptimizer == false }
+optimizeTests.dependsOn createPatchFile
 updateTestFilter.dependsOn optimizeTests
 test.dependsOn updateTestFilter
