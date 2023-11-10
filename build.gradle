@@ -72,7 +72,7 @@ optimizeTests {
     // REQUIRED: Calculate the runtime classpath used to execute tests
     classpath = sourceSets.test.runtimeClasspath;
     // The absolute path to your installed 'dcover' executable
-    // command = project.findProperty('com.diffblue.cover.command') // TO DO: CHECK AS ALREADY ON PATH
+    command = project.findProperty('com.diffblue.cover.command') // TO DO: CHECK AS ALREADY ON PATH
     // The absolute path to the patch file for which optimal tests will be calculated
     patch = project.findProperty('com.diffblue.cover.patch')
 }
