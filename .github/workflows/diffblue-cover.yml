@@ -1,0 +1,29 @@
+# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
+
+name: Automated Test Generation with Diffblue Cover
+
+on: pull_request
+
+jobs:  
+  test:
+    runs-on: ubuntu-latest
+    container: diffblue/internal-cover-cli:202401-github-2024.01.01-snapshot-jdk17
+    steps:
+    - name: Hello World Echo
+      run: echo "Hello world from Diffblue Cover"
+    - name: Checkout project
+      uses: actions/checkout@v4
+      with:
+        set-safe-directory: true
+    - name: Build PetClinic
+      run: ./mvnw package
+    - name: Log DCover version
+      run: dcover --version
+    - name: Run Diffblue Cover
+      env:
+        GITHUB_OAUTH: ${{ secrets.DCOVER_TOKEN }}
+        GITHUB_PR_NUMBER: ${{ github.event.number }}  
+      run: |
+        git config --global --add safe.directory /__w/demo-spring-petclinic/demo-spring-petclinic
+        dcover ci activate ${{ secrets.DIFFBLUE_LICENSE }} validate --maven create --maven
